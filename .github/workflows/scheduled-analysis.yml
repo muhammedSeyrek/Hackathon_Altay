@@ -1,15 +1,26 @@
-name: Zamanlanmış Log Analizi
+name: Otomatik Log Analizi
 
-# Repo'daki bir log dosyasını analiz edip Telegram grubuna grafik+özet+öneri gönderir.
+# Üç tetikleyici:
+# 1) Her commit/push - kod veya log değişince otomatik çalışır
+# 2) Manuel - Actions sekmesinden tek tıkla
+# 3) Cron - her gün 06:00 UTC (TR 09:00)
 on:
+  push:
+    branches: [main, master]
+    # Tek dosya değişse bile çalışsın - filtre koymuyoruz
   workflow_dispatch:
     inputs:
       log_path:
-        description: "Analiz edilecek log dosyasının yolu (repo'ya göre)"
+        description: "Analiz edilecek log dosyasının yolu"
         required: true
         default: "sample.log"
   schedule:
-    - cron: '0 6 * * *'   # her gün 06:00 UTC (TR saatiyle 09:00). İstersen değiştir.
+    - cron: '0 1 * * *'
+
+# Aynı anda iki analiz çalışmasın
+concurrency:
+  group: log-analysis-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -37,4 +48,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python run_analysis.py "${{ github.event.inputs.log_path || 'sample.log' }}"
+          # Manuel input varsa onu, yoksa sample.log
+          LOG_PATH="${{ github.event.inputs.log_path }}"
+          if [ -z "$LOG_PATH" ]; then
+            LOG_PATH="sample.log"
+          fi
+          echo "Analiz edilecek dosya: $LOG_PATH"
+          python run_analysis.py "$LOG_PATH"

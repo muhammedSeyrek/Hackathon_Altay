@@ -4,17 +4,17 @@ GitHub Actions zamanlanmış görevler için tasarlandı.
 
 Kullanım:
     python run_analysis.py <log_dosyasi>
-    python run_analysis.py logs/access.log
 
-Ortam değişkenleri (workflow secret'larından gelir):
+Ortam değişkenleri:
     TELEGRAM_BOT_TOKEN
     TELEGRAM_CHAT_ID
-    GEMINI_API_KEY (opsiyonel - hardening önerisi de gönderilir)
+    GEMINI_API_KEY (opsiyonel)
 """
 
 import os
 import sys
 import io
+import html
 import asyncio
 
 import matplotlib
@@ -28,7 +28,6 @@ from log_parser import parse_log_text, summarize_attacks
 
 
 def make_chart(summary) -> bytes:
-    """Saatlik saldırı grafiğini PNG bytes olarak döner."""
     hourly = summary["hourly"]
     fig, ax = plt.subplots(figsize=(10, 4))
     bars = ax.bar(hourly.index, hourly.values, color="#d62728", edgecolor="black")
@@ -47,31 +46,38 @@ def make_chart(summary) -> bytes:
     return buf.getvalue()
 
 
-def make_summary_text(summary, source_name: str) -> str:
-    cats = "\n".join(f"  • {k}: {v}" for k, v in summary["top_categories"].items()) or "  (yok)"
-    ips = "\n".join(f"  • `{k}`: {v}" for k, v in list(summary["top_ips"].items())[:5]) or "  (yok)"
+def make_summary_html(summary, source_name: str) -> str:
+    """Telegram HTML parse mode için özet üretir. IP nokta-virgül vs. sorun çıkarmaz."""
+    cats = "\n".join(
+        f"  • {html.escape(str(k))}: {v}" for k, v in summary["top_categories"].items()
+    ) or "  (yok)"
+    ips = "\n".join(
+        f"  • <code>{html.escape(str(k))}</code>: {v}"
+        for k, v in list(summary["top_ips"].items())[:5]
+    ) or "  (yok)"
     return (
-        f"🛡️ *Otomatik Log Analizi*\n"
-        f"Kaynak: `{source_name}`\n\n"
-        f"Toplam satır: `{summary['total']}`\n"
-        f"Şüpheli/saldırı: `{summary['attack_count']}`\n"
-        f"En yoğun saat: `{summary['peak_hour']}:00` "
+        f"🛡️ <b>Otomatik Log Analizi</b>\n"
+        f"Kaynak: <code>{html.escape(source_name)}</code>\n\n"
+        f"Toplam satır: <code>{summary['total']}</code>\n"
+        f"Şüpheli/saldırı: <code>{summary['attack_count']}</code>\n"
+        f"En yoğun saat: <code>{summary['peak_hour']}:00</code> "
         f"({summary['peak_hour_count']} olay)\n\n"
-        f"*Saldırı türleri:*\n{cats}\n\n"
-        f"*En aktif IP'ler:*\n{ips}"
+        f"<b>Saldırı türleri:</b>\n{cats}\n\n"
+        f"<b>En aktif IP'ler:</b>\n{ips}"
     )
 
 
 def gemini_recommendation(summary) -> str | None:
-    """Gemini'den kısa hardening önerisi al (opsiyonel)."""
+    """Gemini'den kısa hardening önerisi al (yeni google-genai SDK ile)."""
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
         return None
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
+        from google import genai
+        client = genai.Client(api_key=api_key)
         prompt = f"""Aşağıdaki log analiz sonuçlarına göre en kritik 3 hardening önerisini Türkçe, kısa ve komut örnekli ver.
 Maksimum 1500 karakter. Sadece savunma; saldırı tekniği yazma.
+Markdown veya HTML formatlama KULLANMA, düz metin yaz.
 
 Toplam olay: {summary['total']}
 Saldırı: {summary['attack_count']}
@@ -79,30 +85,34 @@ En yoğun saat: {summary['peak_hour']}:00 ({summary['peak_hour_count']} olay)
 Saldırı türleri: {summary['top_categories']}
 En aktif IP'ler: {summary['top_ips']}
 """
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        return model.generate_content(prompt).text
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text
     except Exception as e:
         print(f"[uyarı] Gemini önerisi alınamadı: {e}", file=sys.stderr)
         return None
 
 
 async def send_to_telegram(token: str, chat_id: str,
-                           caption: str, chart_bytes: bytes,
+                           caption_html: str, chart_bytes: bytes,
                            extra_text: str | None = None):
     bot = Bot(token=token)
     await bot.send_photo(
         chat_id=chat_id,
         photo=chart_bytes,
-        caption=caption,
-        parse_mode=ParseMode.MARKDOWN,
+        caption=caption_html,
+        parse_mode=ParseMode.HTML,
     )
     if extra_text:
-        # Telegram mesaj limiti ~4096
-        for chunk in [extra_text[i:i+3800] for i in range(0, len(extra_text), 3800)]:
+        # Düz metin olarak gönder; HTML escape uygula. 4096 karakter limiti var.
+        safe = html.escape(extra_text)
+        for chunk in [safe[i:i+3800] for i in range(0, len(safe), 3800)]:
             await bot.send_message(
                 chat_id=chat_id,
-                text=f"💡 *Hardening önerisi*\n\n{chunk}",
-                parse_mode=ParseMode.MARKDOWN,
+                text=f"💡 <b>Hardening önerisi</b>\n\n{chunk}",
+                parse_mode=ParseMode.HTML,
             )
 
 
@@ -135,7 +145,7 @@ def main():
     print(f"Peak: {summary['peak_hour']}:00 ({summary['peak_hour_count']} olay)")
 
     chart = make_chart(summary)
-    caption = make_summary_text(summary, os.path.basename(path))
+    caption = make_summary_html(summary, os.path.basename(path))
     advice = gemini_recommendation(summary)
 
     asyncio.run(send_to_telegram(token, chat_id, caption, chart, advice))

@@ -10,7 +10,7 @@ import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 from log_parser import parse_log_text, summarize_attacks
@@ -30,11 +30,10 @@ st.title("🛡️ Log Saldırı Analiz Aracı")
 st.caption("Log dosyanı yükle veya yapıştır → saatlik saldırı grafiğini gör → Gemini'ye hardening önerisi sor.")
 
 # --- Gemini'yi hazırla ---
-gemini_ready = False
+gemini_client = None
 if GEMINI_API_KEY:
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        gemini_ready = True
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
         st.warning(f"Gemini başlatılamadı: {e}")
 else:
@@ -145,7 +144,7 @@ if st.session_state.df is not None:
 # --- Chatbot ---
 st.subheader("4. 💬 Hardening Asistanı (Gemini)")
 
-if not gemini_ready:
+if gemini_client is None:
     st.info("Chatbotu kullanmak için GEMINI_API_KEY gerekli.")
 else:
     # Önceki mesajları göster
@@ -184,18 +183,20 @@ Asla saldırı yöntemleri öğretme; sadece SAVUNMA ve sertleştirme öner.
         with st.chat_message("assistant"):
             with st.spinner("Düşünüyor..."):
                 try:
-                    model = genai.GenerativeModel(
-                        "gemini-2.5-pro",
-                        system_instruction=system_prompt,
-                    )
                     # Konuşma geçmişini Gemini formatına çevir
-                    history = []
-                    for m in st.session_state.messages[:-1]:
+                    contents = []
+                    for m in st.session_state.messages:
                         role = "user" if m["role"] == "user" else "model"
-                        history.append({"role": role, "parts": [m["content"]]})
+                        contents.append({
+                            "role": role,
+                            "parts": [{"text": m["content"]}],
+                        })
 
-                    chat = model.start_chat(history=history)
-                    response = chat.send_message(user_input)
+                    response = gemini_client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=contents,
+                        config={"system_instruction": system_prompt},
+                    )
                     answer = response.text
                 except Exception as e:
                     answer = f"Hata: {e}"
