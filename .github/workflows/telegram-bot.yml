@@ -1,0 +1,42 @@
+name: Telegram Bot
+
+# GitHub Actions runner'ları max 6 saat çalışır.
+# Bot 6 saat sonra otomatik durur. Tekrar başlatmak için:
+#   - Manuel: Actions → Run workflow
+#   - Cron: Aşağıdaki schedule satırını aç (her 5 saatte 30dk overlap'le yeniden başlatır)
+on:
+  workflow_dispatch:        # Actions sekmesinden manuel başlat
+  # schedule:
+  #   - cron: '0 */5 * * *'  # her 5 saatte bir yeniden başlat (opsiyonel)
+
+# Aynı anda iki bot çalışmasını engelle (Telegram conflict hatası verir)
+concurrency:
+  group: telegram-bot
+  cancel-in-progress: true
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350      # ~5h 50min, 6 saat sınırından önce temiz kapanış
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Telegram bot
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python telegram_bot.py
