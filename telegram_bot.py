@@ -30,12 +30,12 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from log_parser import parse_log_text, summarize_attacks
 
 # --- Ortam değişkenleri ---
-load_dotenv()
+load_dotenv(find_dotenv())
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")  # opsiyonel - proaktif uyarı için

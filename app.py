@@ -11,12 +11,12 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from google import genai
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from log_parser import parse_log_text, summarize_attacks
 
 # --- Ortam değişkenleri ---
-load_dotenv()
+load_dotenv(find_dotenv())
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # --- Sayfa ayarları ---
@@ -37,7 +37,7 @@ if GEMINI_API_KEY:
     except Exception as e:
         st.warning(f"Gemini başlatılamadı: {e}")
 else:
-    st.warning("")
+    st.error("❌ GEMINI_API_KEY bulunamadı! .env dosyasında ayarlayın.")
 
 # --- Session state ---
 if "log_text" not in st.session_state:
