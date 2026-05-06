@@ -37,7 +37,7 @@ if GEMINI_API_KEY:
     except Exception as e:
         st.warning(f"Gemini başlatılamadı: {e}")
 else:
-    st.warning("GEMINI_API_KEY bulunamadı. .env dosyasını kontrol et.")
+    st.warning("")
 
 # --- Session state ---
 if "log_text" not in st.session_state:
