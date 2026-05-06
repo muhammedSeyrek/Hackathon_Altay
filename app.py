@@ -185,7 +185,7 @@ Asla saldırı yöntemleri öğretme; sadece SAVUNMA ve sertleştirme öner.
             with st.spinner("Düşünüyor..."):
                 try:
                     model = genai.GenerativeModel(
-                        "gemini-1.5-flash",
+                        "gemini-2.5-pro",
                         system_instruction=system_prompt,
                     )
                     # Konuşma geçmişini Gemini formatına çevir
