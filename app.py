@@ -36,6 +36,8 @@ if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
         st.warning(f"Gemini başlatılamadı: {e}")
+else:
+    st.warning("GEMINI_API_KEY bulunamadı. .env dosyasını kontrol et.")
 
 # --- Session state ---
 if "log_text" not in st.session_state:
