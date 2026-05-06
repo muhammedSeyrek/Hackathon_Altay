@@ -192,7 +192,7 @@ Asla saldırı yöntemleri öğretme; sadece SAVUNMA ve sertleştirme öner.
                         })
 
                     response = gemini_client.models.generate_content(
-                        model="gemini-2.5-pro",
+                        model="gemini-2.5-flash",
                         contents=contents,
                         config={"system_instruction": system_prompt},
                     )
