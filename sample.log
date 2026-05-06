@@ -1,0 +1,24 @@
+Jan 15 03:14:22 server sshd[1234]: Failed password for root from 192.168.1.50 port 22 ssh2
+Jan 15 03:14:25 server sshd[1235]: Failed password for admin from 192.168.1.50 port 22 ssh2
+Jan 15 03:14:28 server sshd[1236]: Failed password for root from 192.168.1.50 port 22 ssh2
+Jan 15 03:14:32 server sshd[1237]: Invalid user oracle from 10.0.0.5
+Jan 15 03:14:35 server sshd[1238]: Invalid user postgres from 10.0.0.5
+Jan 15 03:15:01 server sshd[1239]: Failed password for root from 10.0.0.5 port 22 ssh2
+Jan 15 03:15:05 server sshd[1240]: pam_unix(sshd:auth): authentication failure; user=root
+Jan 15 09:23:11 server sshd[2001]: Failed password for git from 203.0.113.45 port 22 ssh2
+Jan 15 14:32:01 server sshd[3001]: Failed password for admin from 198.51.100.22 port 22 ssh2
+Jan 15 14:35:12 server sshd[3002]: Connection closed by 198.51.100.22 [preauth]
+2024-01-15 02:11:33 192.168.1.100 GET /wp-admin/ 404
+2024-01-15 02:11:35 192.168.1.100 GET /wp-login.php 404
+2024-01-15 02:11:38 192.168.1.100 GET /.env 404
+2024-01-15 02:12:01 192.168.1.100 GET /phpmyadmin/ 404
+192.168.1.200 - - [15/Jan/2024:03:23:11 +0000] "GET /admin?id=1' OR '1'='1 HTTP/1.1" 403 0
+192.168.1.200 - - [15/Jan/2024:03:24:55 +0000] "GET /search?q=<script>alert(1)</script> HTTP/1.1" 403 0
+192.168.1.200 - - [15/Jan/2024:03:25:02 +0000] "GET /../../etc/passwd HTTP/1.1" 403 0
+2024-01-15 22:45:01 firewall: blocked port scan from 45.33.32.156
+2024-01-15 22:46:11 firewall: brute force attempt detected from 45.33.32.156
+Jan 15 23:11:22 server sshd[4001]: Failed password for root from 45.33.32.156 port 22 ssh2
+Jan 15 23:11:25 server sshd[4002]: Failed password for root from 45.33.32.156 port 22 ssh2
+Jan 15 23:12:01 server sshd[4003]: Invalid user test from 45.33.32.156
+2024-01-15 10:15:33 web: Normal request from 192.168.1.10 GET /index.html 200
+2024-01-15 10:16:01 web: Normal request from 192.168.1.11 GET /about.html 200
