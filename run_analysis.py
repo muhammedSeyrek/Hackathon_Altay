@@ -86,7 +86,7 @@ Saldırı türleri: {summary['top_categories']}
 En aktif IP'ler: {summary['top_ips']}
 """
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-pro",
             contents=prompt,
         )
         return response.text
