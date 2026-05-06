@@ -15,7 +15,6 @@ from dotenv import load_dotenv, find_dotenv
 
 from log_parser import parse_log_text, summarize_attacks
 
-# --- Ortam değişkenleri ---
 load_dotenv(find_dotenv())
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
@@ -193,7 +192,7 @@ Asla saldırı yöntemleri öğretme; sadece SAVUNMA ve sertleştirme öner.
                         })
 
                     response = gemini_client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-2.5-pro",
                         contents=contents,
                         config={"system_instruction": system_prompt},
                     )
